@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Humanity-First Berichtssoftware</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 750px;
+            margin: 50px auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e6e6e6;
+        }
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            color: #555;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+        form {
+            margin-top: 20px;
+        }
+        label {
+            font-weight: 600;
+            font-size: 16px;
+            color: #444;
+            display: block;
+            margin-bottom: 8px;
+        }
+        input[type="text"], input[type="file"], select {
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 20px;
+            border: 1px solid #d6d6d6;
+            border-radius: 8px;
+            background: #f9f9f9;
+            font-size: 15px;
+            color: #333;
+            transition: border 0.3s, box-shadow 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #6c757d;
+            box-shadow: 0 0 8px rgba(108, 117, 125, 0.3);
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #6c757d;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            background: #565e64;
+        }
+        .note {
+            font-size: 13px;
+            color: #888;
+            margin-top: -15px;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 13px;
+            color: #888;
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin: 20px;
+                padding: 25px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            button {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Humanity-First Berichtssoftware</h1>
+        <form method="POST" enctype="multipart/form-data">
+            <label for="template">Länder-Vorlage auswählen:</label>
+            <select name="template" id="template" required>
+                {% for template in templates %}
+                <option value="{{ template }}">{{ template }}</option>
+                {% endfor %}
+            </select>
+            
+            <label for="spendername">Spendername:</label>
+            <input type="text" name="spendername" id="spendername" placeholder="Name des Spenders" required>
+            
+            <label for="brunnen_nr">Brunnen-Nr.:</label>
+            <input type="text" name="brunnen_nr" id="brunnen_nr" placeholder="Nummer des Brunnens" required>
+            
+            <label for="well_image">Brunnen-Bild:</label>
+            <input type="file" name="well_image" id="well_image" accept="image/*" required>
+            <p class="note">Laden Sie ein Bild mit dem Signboard und Brunnen für die Titelseite hoch.</p>
+
+
+            <label for="signboard_image">Signboard-Bild:</label>
+            <input type="file" name="signboard_image" id="signboard_image" accept="image/*">
+            <p class="note">Laden Sie ein Bild für das Signboard hoch oder geben Sie bei schlechter Qualität einen Text ein.</p>
+            
+            <label for="signboard_text">Signboard-Text (nur wenn kein Signboard-Bild):</label>
+            <input type="text" name="signboard_text" id="signboard_text" placeholder="Text für das Signboard">
+            
+            <label for="images">weitere Bilder vom Brunnen:</label>
+            <input type="file" name="images" id="images" accept="image/*" multiple>
+            
+            <button type="submit">Bericht generieren</button>
+        </form>
+        <div class="footer">
+            &copy; 2024 Humanity-First. Water for life.
+        </div>
+    </div>
+</body>
+</html>
