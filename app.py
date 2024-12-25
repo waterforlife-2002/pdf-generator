@@ -11,38 +11,6 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
-# Pfad zur Service Account Datei
-SERVICE_ACCOUNT_FILE = '/Users/imranrana/Desktop/brunnen-projekt/config/google_service_account.json'
-
-# Google Sheets API-Scopes und die Service Account Anmeldeinformationen laden
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
-
-# Credentials aus der Service Account Datei laden
-creds = Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES
-)
-
-# Verbindung zur Google Sheets API herstellen
-service = build('sheets', 'v4', credentials=creds)
-
-# Die Spreadsheet-ID (ID aus der URL deines Sheets)
-SPREADSHEET_ID = '1elVTaKWwoYO5yXnFkd-OTEjdukYqWQXpU5GO23lIurI'
-
-# Der Bereich, den du abrufen möchtest (z.B. A1 bis Z1000)
-RANGE_NAME = 'Tabellenblatt1!A1:Z1000'
-
-# Daten aus der Tabelle abrufen
-sheet = service.spreadsheets()
-result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
-values = result.get('values', [])
-
-# Ausgabe der Daten (optional)
-if not values:
-    print('Keine Daten gefunden.')
-else:
-    for row in values:
-        print(row)
-
 # Sicherstellen, dass der Upload-Ordner existiert
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
