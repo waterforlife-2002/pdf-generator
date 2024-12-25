@@ -8,7 +8,7 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
 app = Flask(__name__)
-app.secret_key = "dein_sicherer_schlüssel"  # Geheimschlüssel für Sitzungen
+app.secret_key = os.urandom(24)  # Geheimschlüssel für Sitzungen
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
 # Passwort für die Google-Tabelle
@@ -24,7 +24,6 @@ RANGE_NAME = 'Tabellenblatt1!A1:Z1000'
 # Funktion: Daten aus der Google-Tabelle abrufen
 def get_google_sheet_data():
     try:
-        # JSON-Inhalt aus der Umgebungsvariable laden
         SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
         if not SERVICE_ACCOUNT_JSON:
             raise ValueError("GOOGLE_SERVICE_ACCOUNT_JSON Umgebungsvariable ist nicht gesetzt")
@@ -40,7 +39,6 @@ def get_google_sheet_data():
     except Exception as e:
         print(f"Fehler beim Abrufen der Google-Tabelle: {e}")
         return [["Fehler beim Abrufen der Google-Tabelle: " + str(e)]]
-
 
 # Funktion: Texthalter einfügen
 def add_text_overlay(input_pdf, output_pdf, text_fields, page_number):
@@ -206,15 +204,10 @@ def add_centered_images_with_scaling(input_pdf, output_pdf, image_paths, start_p
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    # Standard-Templates
     templates = ["Niger", "Benin", "Togo", "Cambodia", "Chad"]
-
-    # Überprüfen, ob der Benutzer authentifiziert ist
     is_authenticated = session.get("google_data_authorized", False)
 
-    # POST-Anfrage für Passwort oder andere Formulare
     if request.method == "POST":
-        # Prüfen, ob das Passwort gesendet wurde
         entered_password = request.form.get("password")
         if entered_password:
             if entered_password == PASSWORD:
@@ -223,40 +216,6 @@ def index():
             else:
                 return render_template("index.html", templates=templates, error="Falsches Passwort!", is_authenticated=False)
 
-        # Anderer POST-Logik
-        selected_template = request.form.get("template")
-        if selected_template:
-            template_files = {
-                "Niger": "Niger.pdf",
-                "Benin": "Benin.pdf",
-                "Togo": "Togo.pdf",
-                "Cambodia": "Cambodia.pdf",
-                "Chad": "Chad.pdf"
-            }
-
-            if selected_template not in template_files:
-                return "Vorlage nicht gefunden", 400
-
-            input_pdf = template_files[selected_template]
-            spendername = request.form.get("spendername")
-            brunnen_nr = request.form.get("brunnen_nr")
-
-            if not brunnen_nr:
-                return "Brunnen-Nr. fehlt", 400
-
-            text_fields = [{"x": 15, "y": 40, "text": spendername}, {"x": 172, "y": 257, "text": brunnen_nr}]
-            text_pdf = f"{selected_template}_text.pdf"
-            add_text_overlay(input_pdf, text_pdf, text_fields, page_number=2)
-
-            files = request.files.getlist("images")
-            uploaded_images = [os.path.join(app.config['UPLOAD_FOLDER'], file.filename) for file in files if file.filename]
-            for file, path in zip(files, uploaded_images):
-                file.save(path)
-
-            final_pdf = f"{brunnen_nr}.pdf"
-            return send_file(final_pdf, as_attachment=True)
-
-    # Abrufen der Google-Tabelle, falls authentifiziert
     data = []
     if is_authenticated:
         try:
@@ -266,29 +225,6 @@ def index():
 
     return render_template("index.html", templates=templates, data=data, is_authenticated=is_authenticated)
 
-
-@app.route("/google-data", methods=["GET", "POST"])
-def google_data():
-    if "google_data_authorized" not in session:
-        if request.method == "POST":
-            entered_password = request.form.get("password")
-            if entered_password == PASSWORD:
-                session["google_data_authorized"] = True
-                return redirect(url_for("google_data"))
-            else:
-                return render_template("login.html", error="Falsches Passwort!")
-        return render_template("login.html")
-
-    # Abruf der Google-Tabelle
-    try:
-        data = get_google_sheet_data()
-        if not data:  # Wenn keine Daten vorhanden sind
-            data = [["Keine Daten verfügbar"]]  # Platzhalter-Tabelle
-    except Exception as e:
-        data = [["Fehler beim Abrufen der Tabelle: " + str(e)]]
-
-    return render_template("google_table.html", data=data)
-
 @app.route("/google-logout")
 def google_logout():
     session.pop("google_data_authorized", None)
@@ -296,4 +232,4 @@ def google_logout():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port, debug=False)
