@@ -108,11 +108,11 @@ def add_signboard_content(input_pdf, output_pdf, image_path, text, image_x, imag
 
     overlay.set_text_color(50, 50, 50)
 
-    # Bild einfügen
+    # Bild einfügen (oben)
     if image_path and os.path.exists(image_path):
         overlay.image(image_path, x=image_x, y=image_y, w=image_w, h=image_h)
 
-    # Text einfügen
+    # Text einfügen (auf Höhe des Spendernamens)
     if text:
         overlay.set_xy(text_x, text_y)
         overlay.multi_cell(text_w, 10, text)
@@ -128,7 +128,7 @@ def add_signboard_content(input_pdf, output_pdf, image_path, text, image_x, imag
     with open(output_pdf, "wb") as f:
         writer.write(f)
 
-# Funktion: Zentrierte Bilder einfügen und Seite 18 erhalten
+# Funktion: Zentrierte Bilder einfügen
 def add_centered_images_with_scaling(input_pdf, output_pdf, image_paths, start_page, end_page):
     reader = PdfReader(input_pdf)
     writer = PdfWriter()
@@ -214,16 +214,16 @@ def index():
             add_signboard_content(
                 text_pdf, text_pdf, 
                 signboard_image_path, None, 
-                image_x=123, image_y=50, image_w=70, image_h=50, 
-                text_x=123, text_y=110, text_w=70, 
+                image_x=123, image_y=20, image_w=70, image_h=50,  # Bild oben
+                text_x=123, text_y=40, text_w=70,                 # Text wie Spendername
                 page_number=2
             )
         elif signboard_text:
             add_signboard_content(
                 text_pdf, text_pdf, 
                 None, signboard_text, 
-                image_x=123, image_y=50, image_w=70, image_h=50, 
-                text_x=123, text_y=110, text_w=70, 
+                image_x=123, image_y=20, image_w=70, image_h=50, 
+                text_x=123, text_y=40, text_w=70, 
                 page_number=2
             )
 
