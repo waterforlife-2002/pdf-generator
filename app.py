@@ -1,4 +1,5 @@
 import os
+import json
 from flask import Flask, request, render_template, send_file, session, redirect, url_for
 from PyPDF2 import PdfReader, PdfWriter
 from fpdf import FPDF
@@ -19,13 +20,17 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Google Sheets-Konfiguration
 SPREADSHEET_ID = '1elVTaKWwoYO5yXnFkd-OTEjdukYqWQXpU5GO23lIurI'
 RANGE_NAME = 'Tabellenblatt1!A1:Z1000'
-SERVICE_ACCOUNT_FILE = '/Users/imranrana/Desktop/brunnen-projekt/config/google_service_account.json'
 
 # Funktion: Daten aus der Google-Tabelle abrufen
 def get_google_sheet_data():
     try:
-        creds = Credentials.from_service_account_file(
-            SERVICE_ACCOUNT_FILE,
+        # JSON-Inhalt aus der Umgebungsvariable laden
+        SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+        if not SERVICE_ACCOUNT_JSON:
+            raise ValueError("GOOGLE_SERVICE_ACCOUNT_JSON Umgebungsvariable ist nicht gesetzt")
+
+        creds = Credentials.from_service_account_info(
+            json.loads(SERVICE_ACCOUNT_JSON),
             scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
         )
         service = build('sheets', 'v4', credentials=creds)
@@ -34,7 +39,8 @@ def get_google_sheet_data():
         return result.get('values', [])
     except Exception as e:
         print(f"Fehler beim Abrufen der Google-Tabelle: {e}")
-        return [["Fehler beim Abrufen der Google-Tabelle"]]  # Platzhalter für Fehlermeldungen
+        return [["Fehler beim Abrufen der Google-Tabelle: " + str(e)]]
+
 
 # Funktion: Texthalter einfügen
 def add_text_overlay(input_pdf, output_pdf, text_fields, page_number):
