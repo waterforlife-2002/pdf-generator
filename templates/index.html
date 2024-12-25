@@ -6,28 +6,30 @@
     <title>Humanity-First Berichtssoftware</title>
     <style>
         body {
-            font-family: "Helvetica Neue", Arial, sans-serif;
+            font-family: "Roboto", Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background: #f8f9fa;
+            background: linear-gradient(to bottom right, #eaf3ff, #d4e3ff);
             color: #333;
         }
         .container {
-            max-width: 750px;
+            max-width: 800px;
             margin: 50px auto;
-            background: #ffffff;
+            background: #fff;
             padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e6e6e6;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
         h1 {
             text-align: center;
-            font-size: 28px;
+            font-size: 36px;
             font-weight: 700;
-            color: #555;
-            margin-bottom: 25px;
+            color: #1a4f9c;
+            margin-bottom: 30px;
             letter-spacing: 1px;
+        }
+        h1 span {
+            color: #375aab;
         }
         form {
             margin-top: 20px;
@@ -37,75 +39,126 @@
             font-size: 16px;
             color: #444;
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         input[type="text"], input[type="file"], select {
             width: 100%;
-            padding: 12px 14px;
+            padding: 14px 16px;
             margin-bottom: 20px;
-            border: 1px solid #d6d6d6;
-            border-radius: 8px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
             background: #f9f9f9;
             font-size: 15px;
-            color: #333;
-            transition: border 0.3s, box-shadow 0.3s;
         }
         input:focus, select:focus {
             outline: none;
-            border-color: #6c757d;
-            box-shadow: 0 0 8px rgba(108, 117, 125, 0.3);
+            border-color: #1a4f9c;
+            box-shadow: 0 0 10px rgba(26, 79, 156, 0.2);
         }
         button {
             display: block;
             width: 100%;
             padding: 15px;
-            background: #6c757d;
-            color: #ffffff;
+            background: linear-gradient(90deg, #1a4f9c, #375aab);
+            color: #fff;
             font-weight: bold;
             font-size: 16px;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: background 0.3s ease;
         }
         button:hover {
-            background: #565e64;
+            background: linear-gradient(90deg, #153d7e, #2e4f95);
         }
         .note {
-            font-size: 13px;
-            color: #888;
+            font-size: 14px;
+            color: #777;
             margin-top: -15px;
             margin-bottom: 20px;
-            font-style: italic;
+        }
+        .google-table-section {
+            margin-top: 60px;
+        }
+        .google-table-section h2 {
+            text-align: left;
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #1a4f9c;
+            font-weight: bold;
+        }
+        .table-container {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 1;
         }
         .footer {
             text-align: center;
+            margin-top: 40px;
+            font-size: 14px;
+            color: #aaa;
+        }
+        .footer span {
+            color: #1a4f9c;
+        }
+        .logout {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .logout a {
+            color: #1a4f9c;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .password-section {
             margin-top: 30px;
-            font-size: 13px;
-            color: #888;
+            text-align: center;
         }
-        .preview-container {
-            margin-bottom: 20px;
+        .password-section input[type="password"] {
+            width: 60%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
         }
-        .preview-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
+        .password-section button {
+            margin-top: 10px;
+            padding: 6px 20px;
+            font-size: 14px;
+            font-weight: normal;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #1a4f9c, #375aab);
+            color: #fff;
+            cursor: pointer;
+            display: inline-block; /* Button bleibt zentriert */
         }
-        .preview-item img {
-            max-width: 100px;
-            max-height: 100px;
-            object-fit: cover;
-            margin-right: 10px;
+        .password-section button:hover {
+            background: linear-gradient(90deg, #153d7e, #2e4f95);
         }
         @media (max-width: 600px) {
             .container {
                 margin: 20px;
-                padding: 25px;
+                padding: 20px;
             }
             h1 {
-                font-size: 24px;
+                font-size: 28px;
             }
             button {
                 font-size: 14px;
@@ -115,8 +168,8 @@
 </head>
 <body>
     <div class="container">
-        <h1>Humanity-First Berichtssoftware</h1>
-        <form method="POST" enctype="multipart/form-data" id="reportForm">
+        <h1><span>Humanity-First</span> Berichtssoftware</h1>
+        <form method="POST" enctype="multipart/form-data">
             <label for="template">Länder-Vorlage auswählen:</label>
             <select name="template" id="template" required>
                 {% for template in templates %}
@@ -132,52 +185,65 @@
             
             <label for="well_image">Brunnen-Bild:</label>
             <input type="file" name="well_image" id="well_image" accept="image/*" required>
-            <p class="note">Laden Sie ein Bild mit dem Signboard und Brunnen für die Titelseite hoch.</p>
+            <p class="note">Laden Sie ein Bild mit dem Brunnen und Signboard für die Titelseite hoch.</p>
 
             <label for="signboard_image">Signboard-Bild:</label>
             <input type="file" name="signboard_image" id="signboard_image" accept="image/*">
-            <p class="note">Laden Sie ein Bild für das Signboard hoch oder geben Sie bei schlechter Qualität einen Text ein.</p>
+            <p class="note">Laden Sie ein Bild für das Signboard hoch oder geben Sie einen Text ein.</p>
             
             <label for="signboard_text">Signboard-Text (nur wenn kein Signboard-Bild):</label>
             <input type="text" name="signboard_text" id="signboard_text" placeholder="Text für das Signboard">
             
             <label for="images">weitere Bilder vom Brunnen:</label>
             <input type="file" name="images" id="images" accept="image/*" multiple>
-            <div class="preview-container" id="previewContainer"></div>
-            <button type="button" id="clearImages">Bilder löschen</button>
-
+            
             <button type="submit">Bericht generieren</button>
         </form>
+
+        <!-- Google-Tabelle Bereich -->
+        <div class="google-table-section">
+            {% if is_authenticated %}
+                <h2>Google-Tabelle Daten:</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                {% for column in data[0] %}
+                                <th>{{ column }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in data[1:] %}
+                            <tr>
+                                {% for cell in row %}
+                                <td>{{ cell }}</td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="logout">
+                    <a href="{{ url_for('google_logout') }}">Abmelden</a>
+                </div>
+            {% else %}
+                <div class="password-section">
+                    <form method="POST">
+                        <label for="password">Passwort eingeben, um die Tabelle zu sehen:</label>
+                        <input type="password" name="password" id="password" placeholder="Passwort eingeben" required>
+                        <button type="submit">Anmelden</button>
+                    </form>
+                    {% if error %}
+                    <p style="color: red;">{{ error }}</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
         <div class="footer">
-            &copy; 2024 Humanity-First. Water for life.
+            &copy; 2024 <span>Humanity-First</span>. Water for life.
         </div>
     </div>
-    <script>
-        document.getElementById('images').addEventListener('change', function(event) {
-            const previewContainer = document.getElementById('previewContainer');
-            previewContainer.innerHTML = ''; // Clear previous previews
-
-            Array.from(event.target.files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const previewItem = document.createElement('div');
-                    previewItem.className = 'preview-item';
-                    previewItem.innerHTML = `
-                        <img src="${e.target.result}" alt="${file.name}">
-                        <span>${file.name}</span>
-                    `;
-                    previewContainer.appendChild(previewItem);
-                };
-                reader.readAsDataURL(file);
-            });
-        });
-
-        document.getElementById('clearImages').addEventListener('click', function() {
-            const imagesInput = document.getElementById('images');
-            const previewContainer = document.getElementById('previewContainer');
-            imagesInput.value = ''; // Clear the file input
-            previewContainer.innerHTML = ''; // Clear the previews
-        });
-    </script>
 </body>
 </html>

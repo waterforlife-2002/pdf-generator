@@ -1,14 +1,40 @@
 import os
-from flask import Flask, request, render_template, send_file
+from flask import Flask, request, render_template, send_file, session, redirect, url_for
 from PyPDF2 import PdfReader, PdfWriter
 from fpdf import FPDF
 from PIL import Image
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
 
 app = Flask(__name__)
+app.secret_key = "dein_sicherer_schlüssel"  # Geheimschlüssel für Sitzungen
 app.config['UPLOAD_FOLDER'] = 'uploads'
+
+# Passwort für die Google-Tabelle
+PASSWORD = "Ahmadiyya"
 
 # Sicherstellen, dass der Upload-Ordner existiert
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Google Sheets-Konfiguration
+SPREADSHEET_ID = '1elVTaKWwoYO5yXnFkd-OTEjdukYqWQXpU5GO23lIurI'
+RANGE_NAME = 'Tabellenblatt1!A1:Z1000'
+SERVICE_ACCOUNT_FILE = '/Users/imranrana/Desktop/brunnen-projekt/config/google_service_account.json'
+
+# Funktion: Daten aus der Google-Tabelle abrufen
+def get_google_sheet_data():
+    try:
+        creds = Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE,
+            scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        )
+        service = build('sheets', 'v4', credentials=creds)
+        sheet = service.spreadsheets()
+        result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
+        return result.get('values', [])
+    except Exception as e:
+        print(f"Fehler beim Abrufen der Google-Tabelle: {e}")
+        return [["Fehler beim Abrufen der Google-Tabelle"]]  # Platzhalter für Fehlermeldungen
 
 # Funktion: Texthalter einfügen
 def add_text_overlay(input_pdf, output_pdf, text_fields, page_number):
@@ -57,14 +83,14 @@ def add_text_overlay(input_pdf, output_pdf, text_fields, page_number):
     with open(output_pdf, "wb") as f:
         writer.write(f)
 
+
 # Funktion: Brunnen-Bild einfügen
 def add_well_image(input_pdf, output_pdf, image_path, page_number):
     reader = PdfReader(input_pdf)
     writer = PdfWriter()
 
     page_width, page_height = 210, 297
-    margin = 20
-    max_width, max_height = page_width - 2 * margin, page_height * (2 / 3) - 2 * margin
+    max_width, max_height = 160, 125
 
     overlay = FPDF()
     overlay.add_page()
@@ -76,7 +102,7 @@ def add_well_image(input_pdf, output_pdf, image_path, page_number):
     scaled_width, scaled_height = image_width * scale, image_height * scale
 
     x = (page_width - scaled_width) / 2
-    y = (page_height - scaled_height) * (2 / 3)
+    y = (page_height * (2 / 3)) - 85
 
     overlay.image(image_path, x=x, y=y, w=scaled_width, h=scaled_height)
     overlay_pdf_path = "well_image_overlay.pdf"
@@ -91,7 +117,7 @@ def add_well_image(input_pdf, output_pdf, image_path, page_number):
     with open(output_pdf, "wb") as f:
         writer.write(f)
 
-# Funktion: Signboard-Bild und -Text mit fester Position einfügen
+# Funktion: Signboard-Bild und -Text einfügen
 def add_signboard_content(input_pdf, output_pdf, image_path, text, image_x, image_y, image_w, image_h, text_x, text_y, text_w, page_number):
     reader = PdfReader(input_pdf)
     writer = PdfWriter()
@@ -108,11 +134,9 @@ def add_signboard_content(input_pdf, output_pdf, image_path, text, image_x, imag
 
     overlay.set_text_color(50, 50, 50)
 
-    # Bild einfügen (oben)
     if image_path and os.path.exists(image_path):
         overlay.image(image_path, x=image_x, y=image_y, w=image_w, h=image_h)
 
-    # Text einfügen (auf Höhe des Spendernamens)
     if text:
         overlay.set_xy(text_x, text_y)
         overlay.multi_cell(text_w, 10, text)
@@ -176,72 +200,94 @@ def add_centered_images_with_scaling(input_pdf, output_pdf, image_paths, start_p
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    if request.method == "POST":
-        selected_template = request.form.get("template")
-        template_files = {
-            "Niger": "Niger.pdf",
-            "Benin": "Benin.pdf",
-            "Togo": "Togo.pdf",
-            "Cambodia": "Cambodia.pdf",
-            "Chad": "Chad.pdf"
-        }
-
-        if selected_template not in template_files:
-            return "Vorlage nicht gefunden", 400
-
-        input_pdf = template_files[selected_template]
-        spendername = request.form.get("spendername")
-        brunnen_nr = request.form.get("brunnen_nr")
-
-        if not brunnen_nr:
-            return "Brunnen-Nr. fehlt", 400
-
-        text_fields = [{"x": 15, "y": 40, "text": spendername}, {"x": 172, "y": 257, "text": brunnen_nr}]
-        text_pdf = f"{selected_template}_text.pdf"
-        add_text_overlay(input_pdf, text_pdf, text_fields, page_number=2)
-
-        well_image_file = request.files.get("well_image")
-        if well_image_file and well_image_file.filename:
-            well_image_path = os.path.join(app.config['UPLOAD_FOLDER'], well_image_file.filename)
-            well_image_file.save(well_image_path)
-            add_well_image(text_pdf, text_pdf, well_image_path, page_number=2)
-
-        signboard_file = request.files.get("signboard_image")
-        signboard_text = request.form.get("signboard_text")
-        if signboard_file and signboard_file.filename:
-            signboard_image_path = os.path.join(app.config['UPLOAD_FOLDER'], signboard_file.filename)
-            signboard_file.save(signboard_image_path)
-            add_signboard_content(
-                text_pdf, text_pdf, 
-                signboard_image_path, None, 
-                image_x=123, image_y=20, image_w=70, image_h=50,  # Bild oben
-                text_x=123, text_y=40, text_w=70,                 # Text wie Spendername
-                page_number=2
-            )
-        elif signboard_text:
-            add_signboard_content(
-                text_pdf, text_pdf, 
-                None, signboard_text, 
-                image_x=123, image_y=20, image_w=70, image_h=50, 
-                text_x=123, text_y=40, text_w=70, 
-                page_number=2
-            )
-
-        files = request.files.getlist("images")
-        uploaded_images = [os.path.join(app.config['UPLOAD_FOLDER'], file.filename) for file in files if file.filename]
-        for file, path in zip(files, uploaded_images):
-            file.save(path)
-
-        start_page = 12 if selected_template != "Cambodia" else 13
-        end_page = 17
-        final_pdf = f"{brunnen_nr}.pdf"
-        add_centered_images_with_scaling(text_pdf, final_pdf, uploaded_images, start_page=start_page, end_page=end_page)
-
-        return send_file(final_pdf, as_attachment=True)
-
+    # Standard-Templates
     templates = ["Niger", "Benin", "Togo", "Cambodia", "Chad"]
-    return render_template("index.html", templates=templates)
+
+    # Überprüfen, ob der Benutzer authentifiziert ist
+    is_authenticated = session.get("google_data_authorized", False)
+
+    # POST-Anfrage für Passwort oder andere Formulare
+    if request.method == "POST":
+        # Prüfen, ob das Passwort gesendet wurde
+        entered_password = request.form.get("password")
+        if entered_password:
+            if entered_password == PASSWORD:
+                session["google_data_authorized"] = True
+                is_authenticated = True
+            else:
+                return render_template("index.html", templates=templates, error="Falsches Passwort!", is_authenticated=False)
+
+        # Anderer POST-Logik
+        selected_template = request.form.get("template")
+        if selected_template:
+            template_files = {
+                "Niger": "Niger.pdf",
+                "Benin": "Benin.pdf",
+                "Togo": "Togo.pdf",
+                "Cambodia": "Cambodia.pdf",
+                "Chad": "Chad.pdf"
+            }
+
+            if selected_template not in template_files:
+                return "Vorlage nicht gefunden", 400
+
+            input_pdf = template_files[selected_template]
+            spendername = request.form.get("spendername")
+            brunnen_nr = request.form.get("brunnen_nr")
+
+            if not brunnen_nr:
+                return "Brunnen-Nr. fehlt", 400
+
+            text_fields = [{"x": 15, "y": 40, "text": spendername}, {"x": 172, "y": 257, "text": brunnen_nr}]
+            text_pdf = f"{selected_template}_text.pdf"
+            add_text_overlay(input_pdf, text_pdf, text_fields, page_number=2)
+
+            files = request.files.getlist("images")
+            uploaded_images = [os.path.join(app.config['UPLOAD_FOLDER'], file.filename) for file in files if file.filename]
+            for file, path in zip(files, uploaded_images):
+                file.save(path)
+
+            final_pdf = f"{brunnen_nr}.pdf"
+            return send_file(final_pdf, as_attachment=True)
+
+    # Abrufen der Google-Tabelle, falls authentifiziert
+    data = []
+    if is_authenticated:
+        try:
+            data = get_google_sheet_data()
+        except Exception as e:
+            data = [["Fehler beim Abrufen der Tabelle: " + str(e)]]
+
+    return render_template("index.html", templates=templates, data=data, is_authenticated=is_authenticated)
+
+
+@app.route("/google-data", methods=["GET", "POST"])
+def google_data():
+    if "google_data_authorized" not in session:
+        if request.method == "POST":
+            entered_password = request.form.get("password")
+            if entered_password == PASSWORD:
+                session["google_data_authorized"] = True
+                return redirect(url_for("google_data"))
+            else:
+                return render_template("login.html", error="Falsches Passwort!")
+        return render_template("login.html")
+
+    # Abruf der Google-Tabelle
+    try:
+        data = get_google_sheet_data()
+        if not data:  # Wenn keine Daten vorhanden sind
+            data = [["Keine Daten verfügbar"]]  # Platzhalter-Tabelle
+    except Exception as e:
+        data = [["Fehler beim Abrufen der Tabelle: " + str(e)]]
+
+    return render_template("google_table.html", data=data)
+
+@app.route("/google-logout")
+def google_logout():
+    session.pop("google_data_authorized", None)
+    return redirect(url_for("index"))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Render gibt den Port über eine Umgebungsvariable an
+    port = int(os.environ.get("PORT", 8000))
     app.run(host="0.0.0.0", port=port, debug=True)

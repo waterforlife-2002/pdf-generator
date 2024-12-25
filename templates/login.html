@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passwortschutz</title>
+    <style>
+        body {
+            font-family: "Roboto", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom right, #eaf3ff, #d4e3ff);
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #1a4f9c;
+        }
+        .error {
+            color: red;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Passwort erforderlich</h2>
+        <form method="POST">
+            {% if error %}
+            <div class="error">{{ error }}</div>
+            {% endif %}
+            <label for="password">Passwort:</label>
+            <input type="password" name="password" id="password" required>
+            <button type="submit">Einloggen</button>
+        </form>
+    </div>
+</body>
+</html>
