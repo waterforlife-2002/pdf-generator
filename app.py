@@ -5,6 +5,7 @@ from fpdf import FPDF
 from PIL import Image
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from flask import Flask, request, render_template, send_file, session
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -63,7 +64,7 @@ def add_well_image(input_pdf, output_pdf, image_path, page_number):
     overlay.add_page()
 
     with Image.open(image_path) as img:
-        image_width, image_height = img.size
+        image_width, image_height = img.size  # Verwende image_width und image_height
 
     # Skaliere das Bild mit maximalen Maßen
     scale = min(max_width / image_width, max_height / image_height)
@@ -73,7 +74,7 @@ def add_well_image(input_pdf, output_pdf, image_path, page_number):
     x = (page_width - scaled_width) / 2
     y = (page_height * (2 / 3)) - 85  # Weiter unten
 
-    overlay.image(image_path, x=x, y=y, w=img_width * scale, h=img_height * scale)
+    overlay.image(image_path, x=x, y=y, w=image_width * scale, h=image_height * scale)  # Ändere img_width und img_height
     overlay_pdf_path = "well_image_overlay.pdf"
     overlay.output(overlay_pdf_path)
 
@@ -167,6 +168,7 @@ def index():
 
     # Überprüfen, ob der Benutzer authentifiziert ist
     is_authenticated = session.get("google_data_authorized", False)
+
 
     # POST-Anfrage für Passwort oder andere Formulare
     if request.method == "POST":
