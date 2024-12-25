@@ -84,6 +84,21 @@
             font-size: 13px;
             color: #888;
         }
+        .preview-container {
+            margin-bottom: 20px;
+        }
+        .preview-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .preview-item img {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: cover;
+            margin-right: 10px;
+        }
         @media (max-width: 600px) {
             .container {
                 margin: 20px;
@@ -101,7 +116,7 @@
 <body>
     <div class="container">
         <h1>Humanity-First Berichtssoftware</h1>
-        <form method="POST" enctype="multipart/form-data">
+        <form method="POST" enctype="multipart/form-data" id="reportForm">
             <label for="template">Länder-Vorlage auswählen:</label>
             <select name="template" id="template" required>
                 {% for template in templates %}
@@ -119,7 +134,6 @@
             <input type="file" name="well_image" id="well_image" accept="image/*" required>
             <p class="note">Laden Sie ein Bild mit dem Signboard und Brunnen für die Titelseite hoch.</p>
 
-
             <label for="signboard_image">Signboard-Bild:</label>
             <input type="file" name="signboard_image" id="signboard_image" accept="image/*">
             <p class="note">Laden Sie ein Bild für das Signboard hoch oder geben Sie bei schlechter Qualität einen Text ein.</p>
@@ -129,12 +143,41 @@
             
             <label for="images">weitere Bilder vom Brunnen:</label>
             <input type="file" name="images" id="images" accept="image/*" multiple>
-            
+            <div class="preview-container" id="previewContainer"></div>
+            <button type="button" id="clearImages">Bilder löschen</button>
+
             <button type="submit">Bericht generieren</button>
         </form>
         <div class="footer">
             &copy; 2024 Humanity-First. Water for life.
         </div>
     </div>
+    <script>
+        document.getElementById('images').addEventListener('change', function(event) {
+            const previewContainer = document.getElementById('previewContainer');
+            previewContainer.innerHTML = ''; // Clear previous previews
+
+            Array.from(event.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'preview-item';
+                    previewItem.innerHTML = `
+                        <img src="${e.target.result}" alt="${file.name}">
+                        <span>${file.name}</span>
+                    `;
+                    previewContainer.appendChild(previewItem);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        document.getElementById('clearImages').addEventListener('click', function() {
+            const imagesInput = document.getElementById('images');
+            const previewContainer = document.getElementById('previewContainer');
+            imagesInput.value = ''; // Clear the file input
+            previewContainer.innerHTML = ''; // Clear the previews
+        });
+    </script>
 </body>
 </html>
