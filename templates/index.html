@@ -41,7 +41,7 @@
             display: block;
             margin-bottom: 10px;
         }
-        input[type="text"], input[type="file"], select {
+        input[type="text"], input[type="file"], select, input[type="password"] {
             width: 100%;
             padding: 14px 16px;
             margin-bottom: 20px;
@@ -131,27 +131,6 @@
             margin-top: 30px;
             text-align: center;
         }
-        .password-section input[type="password"] {
-            width: 60%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .password-section button {
-            margin-top: 10px;
-            padding: 6px 20px;
-            font-size: 14px;
-            font-weight: normal;
-            border-radius: 8px;
-            background: linear-gradient(90deg, #1a4f9c, #375aab);
-            color: #fff;
-            cursor: pointer;
-            display: inline-block; /* Button bleibt zentriert */
-        }
-        .password-section button:hover {
-            background: linear-gradient(90deg, #153d7e, #2e4f95);
-        }
         @media (max-width: 600px) {
             .container {
                 margin: 20px;
@@ -169,6 +148,8 @@
 <body>
     <div class="container">
         <h1><span>Humanity-First</span> Berichtssoftware</h1>
+
+        <!-- Hauptformular -->
         <form method="POST" enctype="multipart/form-data">
             <label for="template">Länder-Vorlage auswählen:</label>
             <select name="template" id="template" required>
@@ -225,7 +206,7 @@
                     </table>
                 </div>
                 <div class="logout">
-                    <a href="{{ url_for('google_logout') }}">Abmelden</a>
+                    <a href="{{ url_for('logout') }}">Abmelden</a>
                 </div>
             {% else %}
                 <div class="password-section">
