@@ -250,7 +250,8 @@ def index():
 
         return send_file(final_pdf, as_attachment=True)
 
-    data = []
+    # Stelle sicher, dass `data` immer definiert ist
+    data = [["Keine Daten verfügbar"]]
     if is_authenticated:
         try:
             data = get_google_sheet_data()
