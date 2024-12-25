@@ -1,17 +1,47 @@
 import os
-from flask import Flask, request, render_template, send_file
+from flask import Flask, request, render_template, send_file, session, redirect, url_for
 from PyPDF2 import PdfReader, PdfWriter
 from fpdf import FPDF
 from PIL import Image
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
-from flask import Flask, request, render_template, send_file, session
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
 
-# Passwort für die Google-Tabelle
-PASSWORD = "Ahmadiyya"
+# Pfad zur Service Account Datei
+SERVICE_ACCOUNT_FILE = '/Users/imranrana/Desktop/brunnen-projekt/config/google_service_account.json'
+
+# Google Sheets API-Scopes und die Service Account Anmeldeinformationen laden
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+
+# Credentials aus der Service Account Datei laden
+creds = Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE, scopes=SCOPES
+)
+
+# Verbindung zur Google Sheets API herstellen
+service = build('sheets', 'v4', credentials=creds)
+
+# Die Spreadsheet-ID (ID aus der URL deines Sheets)
+SPREADSHEET_ID = '1elVTaKWwoYO5yXnFkd-OTEjdukYqWQXpU5GO23lIurI'
+
+# Der Bereich, den du abrufen möchtest (z.B. A1 bis Z1000)
+RANGE_NAME = 'Tabellenblatt1!A1:Z1000'
+
+# Daten aus der Tabelle abrufen
+sheet = service.spreadsheets()
+result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
+values = result.get('values', [])
+
+# Ausgabe der Daten (optional)
+if not values:
+    print('Keine Daten gefunden.')
+else:
+    for row in values:
+        print(row)
 
 # Sicherstellen, dass der Upload-Ordner existiert
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -44,13 +74,12 @@ def add_text_overlay(input_pdf, output_pdf, text_fields, page_number):
 
     overlay_reader = PdfReader(overlay_pdf_path)
     for i, page in enumerate(reader.pages):
-        if i == page_number - 1:  # Index-basiert (Seite 3 ist Index 2)
+        if i == page_number - 1:  # Seite korrekt wählen (Seite 3 ist Index 2)
             page.merge_page(overlay_reader.pages[0])
         writer.add_page(page)
 
     with open(output_pdf, "wb") as f:
         writer.write(f)
-
 
 # Funktion: Brunnen-Bild einfügen
 def add_well_image(input_pdf, output_pdf, image_path, page_number):
@@ -97,8 +126,8 @@ def add_signboard_content(input_pdf, output_pdf, image_path, text, image_x, imag
     overlay.add_page()
 
     if image_path and os.path.exists(image_path):
-        # Bild einfügen (rechts oben)
-        overlay.image(image_path, x=121, y=29, w=70, h=40)
+        # Bild einfügen
+        overlay.image(image_path, x=image_x, y=image_y, w=image_w, h=image_h)
     elif text:  # Text einfügen, wenn kein Bild vorhanden ist
         try:
             overlay.add_font("Impact", "", "fonts/impact.ttf", uni=True)
@@ -107,10 +136,6 @@ def add_signboard_content(input_pdf, output_pdf, image_path, text, image_x, imag
             overlay.set_font("Helvetica", style="B", size=21)
 
     overlay.set_text_color(50, 50, 50)
-
-    # Bild einfügen (leicht nach oben verschoben)
-    if image_path and os.path.exists(image_path):
-        overlay.image(image_path, x=image_x, y=image_y + 3.5, w=image_w, h=image_h)  # Verschiebung nach oben
 
     # Text einfügen
     if text:
@@ -122,7 +147,7 @@ def add_signboard_content(input_pdf, output_pdf, image_path, text, image_x, imag
     # Überlagern des PDFs mit dem Overlay
     overlay_reader = PdfReader(overlay_pdf_path)
     for i, page in enumerate(reader.pages):
-        if i == page_number - 1:  # Seite 3 ist Index 2
+        if i == page_number - 1:  # Seite korrekt wählen (Seite 3 ist Index 2)
             page.merge_page(overlay_reader.pages[0])
         writer.add_page(page)
 
@@ -169,9 +194,11 @@ def index():
     # Überprüfen, ob der Benutzer authentifiziert ist
     is_authenticated = session.get("google_data_authorized", False)
 
-
     # POST-Anfrage für Passwort oder andere Formulare
     if request.method == "POST":
+        # Entfernte Passwortüberprüfung
+        
+        # Template-Auswahl und Daten von der Benutzeroberfläche
         selected_template = request.form.get("template")
         template_files = {
             "Niger": "Niger.pdf",
@@ -191,15 +218,16 @@ def index():
         if not brunnen_nr:
             return "Brunnen-Nr. fehlt", 400
 
+        # Textfelder auf der richtigen Seite hinzufügen (Seite 3 statt Seite 2)
         text_fields = [{"x": 15, "y": 40, "text": spendername}, {"x": 172, "y": 257, "text": brunnen_nr}]
         text_pdf = f"{selected_template}_text.pdf"
-        add_text_overlay(input_pdf, text_pdf, text_fields, page_number=2)
+        add_text_overlay(input_pdf, text_pdf, text_fields, page_number=3)
 
         well_image_file = request.files.get("well_image")
         if well_image_file and well_image_file.filename:
             well_image_path = os.path.join(app.config['UPLOAD_FOLDER'], well_image_file.filename)
             well_image_file.save(well_image_path)
-            add_well_image(text_pdf, text_pdf, well_image_path, page_number=2)
+            add_well_image(text_pdf, text_pdf, well_image_path, page_number=3)
 
         signboard_file = request.files.get("signboard_image")
         signboard_text = request.form.get("signboard_text")
@@ -211,7 +239,7 @@ def index():
                 signboard_image_path, None, 
                 image_x=123, image_y=20, image_w=70, image_h=50,  # Bild angepasst
                 text_x=123, text_y=40, text_w=70, 
-                page_number=2
+                page_number=3
             )
         elif signboard_text:
             add_signboard_content(
@@ -219,9 +247,10 @@ def index():
                 None, signboard_text, 
                 image_x=123, image_y=20, image_w=70, image_h=50, 
                 text_x=123, text_y=40, text_w=70, 
-                page_number=2
+                page_number=3
             )
 
+        # Hochgeladene Bilder skalieren und einfügen
         files = request.files.getlist("images")
         uploaded_images = [os.path.join(app.config['UPLOAD_FOLDER'], file.filename) for file in files if file.filename]
         for file, path in zip(files, uploaded_images):
@@ -234,9 +263,8 @@ def index():
 
         return send_file(final_pdf, as_attachment=True)
 
-    templates = ["Niger", "Benin", "Togo", "Cambodia", "Chad"]
     return render_template("index.html", templates=templates)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))  # Render gibt den Port über eine Umgebungsvariable an
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.secret_key = os.urandom(24)  # Sicherstellen, dass die Sitzung sicher ist
+    app.run(host="0.0.0.0", port=8000, debug=True)

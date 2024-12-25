@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +13,7 @@
             color: #333;
         }
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 50px auto;
             background: #fff;
             padding: 40px;
@@ -41,7 +41,7 @@
             display: block;
             margin-bottom: 10px;
         }
-        input[type="text"], input[type="file"], select, input[type="password"] {
+        input[type="text"], input[type="file"], select {
             width: 100%;
             padding: 14px 16px;
             margin-bottom: 20px;
@@ -76,38 +76,6 @@
             margin-top: -15px;
             margin-bottom: 20px;
         }
-        .google-table-section {
-            margin-top: 60px;
-        }
-        .google-table-section h2 {
-            text-align: left;
-            margin-bottom: 20px;
-            font-size: 24px;
-            color: #1a4f9c;
-            font-weight: bold;
-        }
-        .table-container {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            text-align: left;
-            padding: 8px;
-            border: 1px solid #ddd;
-        }
-        th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-            position: sticky;
-            top: 0;
-            z-index: 1;
-        }
         .footer {
             text-align: center;
             margin-top: 40px;
@@ -116,6 +84,18 @@
         }
         .footer span {
             color: #1a4f9c; /* Königsblau */
+        }
+        .google-table-section {
+            margin-top: 60px;
+        }
+        .google-table-container {
+            text-align: center; /* Zentriert den Inhalt */
+        }
+        .google-table-section iframe {
+            width: 80%; /* Breite des iFrames */
+            height: 500px; /* Erhöhte Höhe für mehr sichtbare Daten */
+            border: 0;
+            margin: 0 auto; /* Automatisches Setzen von Rändern für Zentrierung */
         }
         @media (max-width: 600px) {
             .container {
@@ -128,6 +108,10 @@
             button {
                 font-size: 14px;
             }
+            .google-table-section iframe {
+                width: 80%; /* Auf kleineren Bildschirmen 100% Breite */
+                height: 200px; /* Angepasste Höhe für mobile Geräte */
+            }
         }
     </style>
 </head>
@@ -135,7 +119,7 @@
     <div class="container">
         <h1><span>Humanity-First</span> Berichtssoftware</h1>
 
-        <!-- Hauptformular -->
+        <!-- Hauptformular für Berichtserstellung -->
         <form method="POST" enctype="multipart/form-data">
             <label for="template">Länder-Vorlage auswählen:</label>
             <select name="template" id="template" required>
@@ -161,14 +145,24 @@
             <label for="signboard_text">Signboard-Text (nur wenn kein Signboard-Bild):</label>
             <input type="text" name="signboard_text" id="signboard_text" placeholder="Text für das Signboard">
             
-            <label for="images">weitere Bilder vom Brunnen:</label>
+            <label for="images">Weitere Bilder vom Brunnen:</label>
             <input type="file" name="images" id="images" accept="image/*" multiple>
             
             <button type="submit">Bericht generieren</button>
         </form>
-        <div class="footer">
-            &copy; 2024 <span>Humanity-First</span>. Water for life.
+    </div>
+
+    <!-- Google Tabellen Sektion -->
+    <div class="google-table-section">
+        <h2>Google Tabellen Daten</h2>
+        <div class="google-table-container">
+            <iframe src="https://docs.google.com/spreadsheets/d/1elVTaKWwoYO5yXnFkd-OTEjdukYqWQXpU5GO23lIurI/edit?usp=sharing"
+                    width="80%" height="1200" frameborder="0" scrolling="no"></iframe>
         </div>
+    </div>
+
+    <div class="footer">
+        &copy; 2024 <span>Humanity-First</span>. Water for life.
     </div>
 </body>
 </html>
