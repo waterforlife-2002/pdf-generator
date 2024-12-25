@@ -115,21 +115,7 @@
             color: #aaa;
         }
         .footer span {
-            color: #1a4f9c;
-        }
-        .logout {
-            margin-top: 20px;
-            text-align: center;
-        }
-        .logout a {
-            color: #1a4f9c;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        .password-section {
-            margin-top: 30px;
-            text-align: center;
+            color: #1a4f9c; /* Königsblau */
         }
         @media (max-width: 600px) {
             .container {
@@ -180,48 +166,6 @@
             
             <button type="submit">Bericht generieren</button>
         </form>
-
-        <!-- Google-Tabelle Bereich -->
-        <div class="google-table-section">
-            {% if is_authenticated %}
-                <h2>Google-Tabelle Daten:</h2>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                {% for column in data[0] %}
-                                <th>{{ column }}</th>
-                                {% endfor %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for row in data[1:] %}
-                            <tr>
-                                {% for cell in row %}
-                                <td>{{ cell }}</td>
-                                {% endfor %}
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="logout">
-                    <a href="{{ url_for('logout') }}">Abmelden</a>
-                </div>
-            {% else %}
-                <div class="password-section">
-                    <form method="POST">
-                        <label for="password">Passwort eingeben, um die Tabelle zu sehen:</label>
-                        <input type="password" name="password" id="password" placeholder="Passwort eingeben" required>
-                        <button type="submit">Anmelden</button>
-                    </form>
-                    {% if error %}
-                    <p style="color: red;">{{ error }}</p>
-                    {% endif %}
-                </div>
-            {% endif %}
-        </div>
-
         <div class="footer">
             &copy; 2024 <span>Humanity-First</span>. Water for life.
         </div>
