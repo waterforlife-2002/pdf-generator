@@ -40,6 +40,74 @@ def get_google_sheet_data():
         print(f"Fehler beim Abrufen der Google-Tabelle: {e}")
         return [["Fehler beim Abrufen der Google-Tabelle: " + str(e)]]
 
+# Funktion: Brunnen-Bild einfügen
+def add_well_image(input_pdf, output_pdf, image_path, page_number):
+    reader = PdfReader(input_pdf)
+    writer = PdfWriter()
+
+    page_width, page_height = 210, 297  # A4-Seite in mm
+    max_width, max_height = 160, 125  # Maximale Bildgröße
+
+    overlay = FPDF()
+    overlay.add_page()
+
+    with Image.open(image_path) as img:
+        image_width, image_height = img.size
+
+    scale = min(max_width / image_width, max_height / image_height)
+    scaled_width, scaled_height = image_width * scale, image_height * scale
+
+    x = (page_width - scaled_width) / 2
+    y = (page_height * (2 / 3)) - 85
+
+    overlay.image(image_path, x=x, y=y, w=scaled_width, h=scaled_height)
+    overlay_pdf_path = "well_image_overlay.pdf"
+    overlay.output(overlay_pdf_path)
+
+    overlay_reader = PdfReader(overlay_pdf_path)
+    for i, page in enumerate(reader.pages):
+        if i == page_number:
+            page.merge_page(overlay_reader.pages[0])
+        writer.add_page(page)
+
+    with open(output_pdf, "wb") as f:
+        writer.write(f)
+
+# Funktion: Signboard-Bild und -Text einfügen
+def add_signboard_content(input_pdf, output_pdf, image_path, text, image_x, image_y, image_w, image_h, text_x, text_y, text_w, page_number):
+    reader = PdfReader(input_pdf)
+    writer = PdfWriter()
+
+    overlay_pdf_path = "signboard_content_overlay.pdf"
+    overlay = FPDF()
+    overlay.add_page()
+
+    try:
+        overlay.add_font("Impact", "", "fonts/impact.ttf", uni=True)
+        overlay.set_font("Impact", size=21)
+    except:
+        overlay.set_font("Helvetica", style="B", size=21)
+
+    overlay.set_text_color(50, 50, 50)
+
+    if image_path and os.path.exists(image_path):
+        overlay.image(image_path, x=image_x, y=image_y, w=image_w, h=image_h)
+
+    if text:
+        overlay.set_xy(text_x, text_y)
+        overlay.multi_cell(text_w, 10, text)
+
+    overlay.output(overlay_pdf_path)
+
+    overlay_reader = PdfReader(overlay_pdf_path)
+    for i, page in enumerate(reader.pages):
+        if i == page_number:
+            page.merge_page(overlay_reader.pages[0])
+        writer.add_page(page)
+
+    with open(output_pdf, "wb") as f:
+        writer.write(f)
+
 # Funktion: Texthalter einfügen
 def add_text_overlay(input_pdf, output_pdf, text_fields, page_number):
     reader = PdfReader(input_pdf)
