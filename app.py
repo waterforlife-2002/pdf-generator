@@ -91,8 +91,8 @@ def add_well_image(input_pdf, output_pdf, image_path, page_number):
     with open(output_pdf, "wb") as f:
         writer.write(f)
 
-# Funktion: Signboard-Text oder Bild einfügen
-def add_signboard_content(input_pdf, output_pdf, image_path, text, x, y, w, h, page_number):
+# Funktion: Signboard-Bild und -Text mit fester Position einfügen
+def add_signboard_content(input_pdf, output_pdf, image_path, text, image_x, image_y, image_w, image_h, text_x, text_y, text_w, page_number):
     reader = PdfReader(input_pdf)
     writer = PdfWriter()
 
@@ -108,11 +108,14 @@ def add_signboard_content(input_pdf, output_pdf, image_path, text, x, y, w, h, p
 
     overlay.set_text_color(50, 50, 50)
 
+    # Bild einfügen
     if image_path and os.path.exists(image_path):
-        overlay.image(image_path, x=x, y=y, w=w, h=h)
-    elif text:
-        overlay.set_xy(x, y)
-        overlay.multi_cell(w, 10, text)
+        overlay.image(image_path, x=image_x, y=image_y, w=image_w, h=image_h)
+
+    # Text einfügen
+    if text:
+        overlay.set_xy(text_x, text_y)
+        overlay.multi_cell(text_w, 10, text)
 
     overlay.output(overlay_pdf_path)
 
@@ -208,9 +211,21 @@ def index():
         if signboard_file and signboard_file.filename:
             signboard_image_path = os.path.join(app.config['UPLOAD_FOLDER'], signboard_file.filename)
             signboard_file.save(signboard_image_path)
-            add_signboard_content(text_pdf, text_pdf, signboard_image_path, None, x=123, y=40, w=70, h=50, page_number=2)
+            add_signboard_content(
+                text_pdf, text_pdf, 
+                signboard_image_path, None, 
+                image_x=123, image_y=50, image_w=70, image_h=50, 
+                text_x=123, text_y=110, text_w=70, 
+                page_number=2
+            )
         elif signboard_text:
-            add_signboard_content(text_pdf, text_pdf, None, signboard_text, x=123, y=40, w=70, h=50, page_number=2)
+            add_signboard_content(
+                text_pdf, text_pdf, 
+                None, signboard_text, 
+                image_x=123, image_y=50, image_w=70, image_h=50, 
+                text_x=123, text_y=110, text_w=70, 
+                page_number=2
+            )
 
         files = request.files.getlist("images")
         uploaded_images = [os.path.join(app.config['UPLOAD_FOLDER'], file.filename) for file in files if file.filename]
@@ -219,7 +234,7 @@ def index():
 
         start_page = 12 if selected_template != "Cambodia" else 13
         end_page = 17
-        final_pdf = f"{brunnen_nr}.pdf"  # PDF nach Brunnen-Nr. benennen
+        final_pdf = f"{brunnen_nr}.pdf"
         add_centered_images_with_scaling(text_pdf, final_pdf, uploaded_images, start_page=start_page, end_page=end_page)
 
         return send_file(final_pdf, as_attachment=True)
@@ -227,9 +242,6 @@ def index():
     templates = ["Niger", "Benin", "Togo", "Cambodia", "Chad"]
     return render_template("index.html", templates=templates)
 
-import os
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render gibt den Port über eine Umgebungsvariable an
     app.run(host="0.0.0.0", port=port, debug=True)
-
