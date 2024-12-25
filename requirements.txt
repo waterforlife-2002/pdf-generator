@@ -2,3 +2,6 @@ Flask
 PyPDF2
 fpdf
 pillow
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
