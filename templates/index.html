@@ -87,6 +87,7 @@
         }
         .google-table-section {
             margin-top: 60px;
+            display: none; /* Tabelle und Überschrift standardmäßig verstecken */
         }
         .google-table-container {
             text-align: center; /* Zentriert den Inhalt */
@@ -96,6 +97,61 @@
             height: 500px; /* Erhöhte Höhe für mehr sichtbare Daten */
             border: 0;
             margin: 0 auto; /* Automatisches Setzen von Rändern für Zentrierung */
+        }
+        .google-table-section h2 {
+            margin-left: 80px;
+            margin-bottom: 10px;
+            background-color: #1a4f9c;
+            color: white;
+            padding: 5px 10px;
+            display: inline-block;
+            border-radius: 4px;
+            background-color: #1a4f9c;
+            color: white;
+            padding: 5px 10px;
+            display: inline-block;
+            border-radius: 4px;
+        }
+        .password-section {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .password-section input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            width: auto;
+            text-align: center;
+        }
+        .password-section .password-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        .password-section button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(90deg, #1a4f9c, #375aab);
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 50%; /* Hälfte der Breite */
+            max-width: 300px;
+        }
+        .password-section button:hover {
+            background: linear-gradient(90deg, #153d7e, #2e4f95);
+        }
+        .password-section .toggle-password {
+            font-size: 12px;
+            color: #1a4f9c;
+            cursor: pointer;
+            text-decoration: underline;
         }
         @media (max-width: 600px) {
             .container {
@@ -112,12 +168,17 @@
                 width: 80%; /* Auf kleineren Bildschirmen 100% Breite */
                 height: 200px; /* Angepasste Höhe für mobile Geräte */
             }
+            .google-table-section h2 {
+                text-align: left;
+                padding: 5px 10px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1><span>Humanity-First</span> Berichtssoftware</h1>
+        <h1 style="background-color: #1a4f9c; color: white; padding: 10px; border-radius: 4px; display: inline-block; text-align: center; width: 100%;">Humanity-First Berichtssoftware</h1>
 
         <!-- Hauptformular für Berichtserstellung -->
         <form method="POST" enctype="multipart/form-data">
@@ -127,13 +188,13 @@
                 <option value="{{ template }}">{{ template }}</option>
                 {% endfor %}
             </select>
-            
+
             <label for="spendername">Spendername:</label>
             <input type="text" name="spendername" id="spendername" placeholder="Name des Spenders" required>
-            
+
             <label for="brunnen_nr">Brunnen-Nr.:</label>
             <input type="text" name="brunnen_nr" id="brunnen_nr" placeholder="Nummer des Brunnens" required>
-            
+
             <label for="well_image">Brunnen-Bild:</label>
             <input type="file" name="well_image" id="well_image" accept="image/*" required>
             <p class="note">Laden Sie ein Bild mit dem Brunnen und Signboard für die Titelseite hoch.</p>
@@ -141,28 +202,63 @@
             <label for="signboard_image">Signboard-Bild:</label>
             <input type="file" name="signboard_image" id="signboard_image" accept="image/*">
             <p class="note">Laden Sie ein Bild für das Signboard hoch oder geben Sie einen Text ein.</p>
-            
+
             <label for="signboard_text">Signboard-Text (nur wenn kein Signboard-Bild):</label>
             <input type="text" name="signboard_text" id="signboard_text" placeholder="Text für das Signboard">
-            
+
             <label for="images">Weitere Bilder vom Brunnen:</label>
             <input type="file" name="images" id="images" accept="image/*" multiple>
-            
+
             <button type="submit">Bericht generieren</button>
         </form>
     </div>
 
+    <!-- Passwort-Schutz Sektion -->
+    <div class="password-section" id="passwordSection">
+        <label for="password">Geben Sie das Passwort ein, um die Tabelle zu sehen:</label>
+        <div class="password-container">
+            <input type="password" id="password" placeholder="Passwort">
+            <span class="toggle-password" onclick="togglePasswordVisibility()">Passwort anzeigen</span>
+        </div>
+        <button onclick="checkPassword()">Bestätigen</button>
+    </div>
+
     <!-- Google Tabellen Sektion -->
-    <div class="google-table-section">
+    <div class="google-table-section" id="googleTableSection">
         <h2>Google Tabellen Daten</h2>
-        <div class="google-table-container">
+        <div class="google-table-container" id="googleTableContainer">
             <iframe src="https://docs.google.com/spreadsheets/d/1elVTaKWwoYO5yXnFkd-OTEjdukYqWQXpU5GO23lIurI/edit?usp=sharing"
                     width="80%" height="1200" frameborder="0" scrolling="no"></iframe>
         </div>
     </div>
 
-    <div class="footer">
-        &copy; 2024 <span>Humanity-First</span>. Water for life.
+    <div class="footer" style="background-color: #1a4f9c; color: white; padding: 10px; border-radius: 4px;">
+        &copy; 2024 <span style="color: white;">Humanity-First</span>. Water for life.
     </div>
+
+    <script>
+        function checkPassword() {
+            const passwordInput = document.getElementById('password').value;
+            const correctPassword = 'ahmadiyya'; // Ersetzen Sie dies durch Ihr gewünschtes Passwort
+            const googleTableSection = document.getElementById('googleTableSection');
+            const passwordSection = document.getElementById('passwordSection');
+
+            if (passwordInput === correctPassword) {
+                googleTableSection.style.display = 'block'; // Tabelle und Überschrift anzeigen
+                passwordSection.style.display = 'none'; // Passwortbereich ausblenden
+            } else {
+                alert('Falsches Passwort! Bitte versuchen Sie es erneut.');
+            }
+        }
+
+        function togglePasswordVisibility() {
+            const passwordField = document.getElementById('password');
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+            } else {
+                passwordField.type = 'password';
+            }
+        }
+    </script>
 </body>
 </html>
