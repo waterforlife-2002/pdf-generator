@@ -41,15 +41,15 @@
             display: block;
             margin-bottom: 10px;
         }
-        input[type="text"], input[type="file"], select {
-            width: 100%;
-            padding: 14px 16px;
-            margin-bottom: 20px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            background: #f9f9f9;
-            font-size: 15px;
-        }
+        input[type="text"], input[type="file"], input[type="email"], select {
+    width: 100%;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: #f9f9f9;
+    font-size: 15px;
+}
         input:focus, select:focus {
             outline: none;
             border-color: #1a4f9c;
@@ -186,6 +186,9 @@
     <div class="container">
         <h1 style="background-color: #1a4f9c; color: white; padding: 10px; border-radius: 4px; display: inline-block; text-align: center; width: 100%;">Humanity-First Berichtssoftware</h1>
 
+                <div id="confirmationMessage" class="confirmation" style="display: none;">
+                    E-Mail wurde erfolgreich versandt! Der Bericht steht auch zum Download bereit.
+                </div>
         <a href="https://app.asana.com/" target="_blank" class="asana-button">Einloggen bei Asana</a>
 <style>
     .asana-button {
@@ -204,39 +207,45 @@
     .asana-button:hover {
         background: #9c1515; /* Dunklerer Blau-Ton beim Hover */
     }
+
+
 </style>
 
         <!-- Hauptformular für Berichtserstellung -->
-        <form method="POST" enctype="multipart/form-data">
+        <form method="POST" enctype="multipart/form-data" onsubmit="showConfirmation(event)">
             <label for="template">Länder-Vorlage auswählen:</label>
             <select name="template" id="template" required>
                 {% for template in templates %}
                 <option value="{{ template }}">{{ template }}</option>
                 {% endfor %}
             </select>
-
+        
             <label for="spendername">Spendername:</label>
             <input type="text" name="spendername" id="spendername" placeholder="Name des Spenders" required>
-
+        
             <label for="brunnen_nr">Brunnen-Nr.:</label>
             <input type="text" name="brunnen_nr" id="brunnen_nr" placeholder="Nummer des Brunnens" required>
-
+        
             <label for="well_image">Brunnen-Bild:</label>
             <input type="file" name="well_image" id="well_image" accept="image/*" required>
             <p class="note">Laden Sie ein Bild mit dem Brunnen und Signboard für die Titelseite hoch.</p>
-
+        
             <label for="signboard_image">Signboard-Bild:</label>
             <input type="file" name="signboard_image" id="signboard_image" accept="image/*">
             <p class="note">Laden Sie ein Bild für das Signboard hoch oder geben Sie einen Text ein.</p>
-
+        
             <label for="signboard_text">Signboard-Text (nur wenn kein Signboard-Bild):</label>
             <input type="text" name="signboard_text" id="signboard_text" placeholder="Text für das Signboard">
-
+        
             <label for="images">Weitere Bilder vom Brunnen:</label>
             <input type="file" name="images" id="images" accept="image/*" multiple>
-
-            <button type="submit">Bericht generieren</button>
-        </form>
+        
+            <label for="receiver_email">Empfänger-E-Mail:</label>
+            <input type="email" name="receiver_email" id="receiver_email" placeholder="E-Mail-Adresse des Empfängers" required>
+        
+            <button type="submit">Bericht generieren & versenden</button>
+            
+        </form>        
     </div>
 
     <!-- Passwort-Schutz Sektion -->
@@ -286,6 +295,8 @@
                 passwordField.type = 'password';
             }
         }
+
+
     </script>
 </body>
 </html>

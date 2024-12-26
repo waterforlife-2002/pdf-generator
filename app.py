@@ -3,15 +3,15 @@ from flask import Flask, request, render_template, send_file, session
 from PyPDF2 import PdfReader, PdfWriter
 from fpdf import FPDF
 from PIL import Image
-import requests
-import asana
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 # Flask App-Initialisierung
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-# Sicherstellen, dass der Upload-Ordner existiert
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Funktion: Texthalter einfügen
@@ -154,19 +154,46 @@ def add_centered_images_with_scaling(input_pdf, output_pdf, image_paths, start_p
     with open(output_pdf, "wb") as f:
         writer.write(f)
 
+# Funktion zum Senden von E-Mails
+def send_email_with_attachment(receiver_email, subject, body, attachment_path):
+    sender_email = "waterforlife@humanityfirst.de"
+    sender_password = "gaktys-devxoK-0guwha"  # Passwort des E-Mail-Kontos
+
+    # E-Mail konfigurieren
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = subject
+
+    # Nachrichtentext hinzufügen
+    msg.attach(MIMEText(body, 'plain'))
+
+    # PDF-Anhang hinzufügen
+    with open(attachment_path, "rb") as attachment:
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(attachment.read())
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', f'attachment; filename={attachment_path}')
+    msg.attach(part)
+
+    # E-Mail senden
+    try:
+        with smtplib.SMTP('smtp.ionos.de', 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+            print(f"E-Mail erfolgreich an {receiver_email} gesendet!")
+    except Exception as e:
+        print(f"Fehler beim Senden der E-Mail: {e}")
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     # Standard-Templates
     templates = ["Niger", "Benin", "Togo", "Cambodia", "Chad"]
 
-    # Überprüfen, ob der Benutzer authentifiziert ist
-    is_authenticated = session.get("google_data_authorized", False)
-
-    # POST-Anfrage für Passwort oder andere Formulare
+    # POST-Anfrage für die Formularverarbeitung
     if request.method == "POST":
-        # Entfernte Passwortüberprüfung
-        
-        # Template-Auswahl und Daten von der Benutzeroberfläche
+        # Template-Auswahl und Eingabedaten abrufen
         selected_template = request.form.get("template")
         template_files = {
             "Niger": "Niger.pdf",
@@ -182,30 +209,41 @@ def index():
         input_pdf = template_files[selected_template]
         spendername = request.form.get("spendername")
         brunnen_nr = request.form.get("brunnen_nr")
+        receiver_email = request.form.get("receiver_email")
 
+        # Validierung der Eingaben
         if not brunnen_nr:
             return "Brunnen-Nr. fehlt", 400
 
-        # Textfelder auf der richtigen Seite hinzufügen (Seite 3 statt Seite 2)
-        text_fields = [{"x": 15, "y": 40, "text": spendername}, {"x": 172, "y": 257, "text": brunnen_nr}]
+        if not receiver_email or not is_valid_email(receiver_email):
+            return "Ungültige E-Mail-Adresse", 400
+
+        # Textfelder hinzufügen
+        text_fields = [
+            {"x": 15, "y": 40, "text": spendername},
+            {"x": 172, "y": 257, "text": brunnen_nr}
+        ]
         text_pdf = f"{selected_template}_text.pdf"
         add_text_overlay(input_pdf, text_pdf, text_fields, page_number=3)
 
+        # Brunnen-Bild einfügen
         well_image_file = request.files.get("well_image")
         if well_image_file and well_image_file.filename:
             well_image_path = os.path.join(app.config['UPLOAD_FOLDER'], well_image_file.filename)
             well_image_file.save(well_image_path)
             add_well_image(text_pdf, text_pdf, well_image_path, page_number=3)
 
+        # Signboard-Bild oder -Text einfügen
         signboard_file = request.files.get("signboard_image")
         signboard_text = request.form.get("signboard_text")
+
         if signboard_file and signboard_file.filename:
             signboard_image_path = os.path.join(app.config['UPLOAD_FOLDER'], signboard_file.filename)
             signboard_file.save(signboard_image_path)
             add_signboard_content(
                 text_pdf, text_pdf, 
                 signboard_image_path, None, 
-                image_x=123, image_y=20, image_w=70, image_h=50,  # Bild angepasst
+                image_x=123, image_y=20, image_w=70, image_h=50, 
                 text_x=123, text_y=40, text_w=70, 
                 page_number=3
             )
@@ -218,38 +256,46 @@ def index():
                 page_number=3
             )
 
-        # Hochgeladene Bilder skalieren und einfügen
+        # Zusätzliche Bilder hochladen und einfügen
         files = request.files.getlist("images")
         uploaded_images = [os.path.join(app.config['UPLOAD_FOLDER'], file.filename) for file in files if file.filename]
         for file, path in zip(files, uploaded_images):
             file.save(path)
 
+        # Bilder in PDF einfügen
         start_page = 12 if selected_template != "Cambodia" else 13
         end_page = 17
         final_pdf = f"{brunnen_nr}.pdf"
         add_centered_images_with_scaling(text_pdf, final_pdf, uploaded_images, start_page=start_page, end_page=end_page)
 
+        # E-Mail senden
+        subject = f"Ihr Brunnen {brunnen_nr}"
+        body = (
+            "Assalamo-Aleikum warahmatullah-e-wabarakatehu!\n\n"
+            "Sehr geehrter Spender,\n"
+            "wir freuen uns, Ihnen mitteilen zu können, dass Ihr Projekt einen großen positiven Einfluss auf die dort ansässige Gemeinschaft im Zielland hat.\n\n"
+            "Wir möchten Ihnen unsere aufrichtige Dankbarkeit für Ihre großzügige Spende an Humanity First zum Ausdruck bringen, die dazu beigetragen hat, den Bedarf an sauberem Wasser zu decken.\n\n"
+            "Als Zeichen unserer Wertschätzung freuen wir uns, Ihnen einen umfassenden Bericht über unsere Organisation, unsere Aktivitäten und das Zielgebiet zu präsentieren, in dem Ihre Spende einen bedeutenden Einfluss auf das Leben derjenigen hatte, die am stärksten gefährdet sind.\n\n"
+            "Wir hoffen, dass diese Informationen Ihnen einen umfassenden Einblick in die Bedeutung und den Einfluss Ihres gespendeten Wasserbrunnens geben.\n\n"
+            "Nochmals Alhamdulillah, Jazzakumullah für Ihre Großzügigkeit und Ihr Mitgefühl. Sie haben das Leben vieler Menschen zum Besseren verändert.\n\n"
+            "Mit freundlichen Grüßen\n\n"
+            "Ummad Ahmad\n"
+            "Water for Life\n"
+            "Humanity First Deutschland"
+        )
+        send_email_with_attachment(receiver_email, subject, body, final_pdf)
+
+        # PDF als Download bereitstellen
         return send_file(final_pdf, as_attachment=True)
 
+    # HTML-Formular anzeigen
     return render_template("index.html", templates=templates)
 
-# Asana API-Route
-@app.route("/proxy_asana")
-def proxy_asana():
-    asana_url = "https://app.asana.com/"  # Asana-Webclient-URL
-    try:
-        # Asana-Inhalte abrufen
-        response = requests.get(asana_url, timeout=10)
-
-        # Sicherheitsheader entfernen, die das Einbetten verhindern könnten
-        headers = [(key, value) for key, value in response.headers.items() if key.lower() != "x-frame-options"]
-
-        # HTML-Inhalt zurückgeben
-        return response.text, response.status_code, headers
-    except requests.exceptions.RequestException as e:
-        return f"Fehler beim Abrufen der Asana-Seite: {str(e)}", 500
-
-
+# Helferfunktion zur Validierung von E-Mail-Adressen
+def is_valid_email(email):
+    import re
+    regex = r'^\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    return re.match(regex, email)
 
 if __name__ == "__main__":
     app.secret_key = os.urandom(24)  # Sicherstellen, dass die Sitzung sicher ist
