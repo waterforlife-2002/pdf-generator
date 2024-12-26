@@ -68,7 +68,7 @@
             cursor: pointer;
         }
         button:hover {
-            background: linear-gradient(90deg, #153d7e, #2e4f95);
+            background: linear-gradient(90deg, #9c1515, #9c1515);
         }
         .note {
             font-size: 14px;
@@ -173,12 +173,38 @@
                 padding: 5px 10px;
                 font-size: 14px;
             }
-        }
+        }@media (max-width: 600px) {
+    .asana-section iframe {
+        width: 100%; /* Frame passt sich der Bildschirmbreite an */
+        height: 400px; /* Angepasste Höhe für kleinere Bildschirme */
+    }
+}
+
     </style>
 </head>
 <body>
     <div class="container">
         <h1 style="background-color: #1a4f9c; color: white; padding: 10px; border-radius: 4px; display: inline-block; text-align: center; width: 100%;">Humanity-First Berichtssoftware</h1>
+
+        <a href="https://app.asana.com/" target="_blank" class="asana-button">Einloggen bei Asana</a>
+<style>
+    .asana-button {
+        position: absolute;
+        top: 185px; /* Abstand von der oberen Seite des Containers */
+        right: 280px; /* Abstand von der rechten Seite des Containers */
+        padding: 10px 20px;
+        background: #153d7e; /* Königsblau */
+        color: #fff;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    .asana-button:hover {
+        background: #9c1515; /* Dunklerer Blau-Ton beim Hover */
+    }
+</style>
 
         <!-- Hauptformular für Berichtserstellung -->
         <form method="POST" enctype="multipart/form-data">
@@ -231,6 +257,7 @@
                     width="80%" height="1200" frameborder="0" scrolling="no"></iframe>
         </div>
     </div>
+
 
     <div class="footer" style="background-color: #1a4f9c; color: white; padding: 10px; border-radius: 4px;">
         &copy; 2024 <span style="color: white;">Humanity-First</span>. Water for life.

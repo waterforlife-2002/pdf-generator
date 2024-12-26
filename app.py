@@ -1,15 +1,15 @@
 import os
-from flask import Flask, request, render_template, send_file, session, redirect, url_for
+from flask import Flask, request, render_template, send_file, session
 from PyPDF2 import PdfReader, PdfWriter
 from fpdf import FPDF
 from PIL import Image
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
+import requests
+import asana
 
+# Flask App-Initialisierung
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
-from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Sicherstellen, dass der Upload-Ordner existiert
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -232,6 +232,24 @@ def index():
         return send_file(final_pdf, as_attachment=True)
 
     return render_template("index.html", templates=templates)
+
+# Asana API-Route
+@app.route("/proxy_asana")
+def proxy_asana():
+    asana_url = "https://app.asana.com/"  # Asana-Webclient-URL
+    try:
+        # Asana-Inhalte abrufen
+        response = requests.get(asana_url, timeout=10)
+
+        # Sicherheitsheader entfernen, die das Einbetten verhindern könnten
+        headers = [(key, value) for key, value in response.headers.items() if key.lower() != "x-frame-options"]
+
+        # HTML-Inhalt zurückgeben
+        return response.text, response.status_code, headers
+    except requests.exceptions.RequestException as e:
+        return f"Fehler beim Abrufen der Asana-Seite: {str(e)}", 500
+
+
 
 if __name__ == "__main__":
     app.secret_key = os.urandom(24)  # Sicherstellen, dass die Sitzung sicher ist

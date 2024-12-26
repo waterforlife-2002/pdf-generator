@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asana Dashboard</title>
+</head>
+<body>
+    <h1>Asana Dashboard</h1>
+    <p>Angemeldet als: {{ user['name'] }}</p>
+    <h2>Projekte</h2>
+    <ul>
+        {% for project in projects %}
+            <li>{{ project['name'] }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
