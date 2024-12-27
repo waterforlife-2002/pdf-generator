@@ -213,9 +213,9 @@ def index():
 
         # Validierung der Eingaben
         if not brunnen_nr:
-            return "Brunnen-Nr. fehlt", 400
-
-        if not receiver_email or not is_valid_email(receiver_email):
+            return "Brunnen-Nr. fehlt", 400 
+        
+        if receiver_email and not is_valid_email(receiver_email):
             return "Ungültige E-Mail-Adresse", 400
 
         # Textfelder hinzufügen
@@ -268,28 +268,63 @@ def index():
         final_pdf = f"{brunnen_nr}.pdf"
         add_centered_images_with_scaling(text_pdf, final_pdf, uploaded_images, start_page=start_page, end_page=end_page)
 
+        # Speichern des finalen PDFs im UPLOAD_FOLDER
+        final_pdf = os.path.join(app.config['UPLOAD_FOLDER'], f"{brunnen_nr}.pdf")
+        add_centered_images_with_scaling(text_pdf, final_pdf, uploaded_images, start_page=start_page, end_page=end_page)
+
         # E-Mail senden
-        subject = f"Ihr Brunnen {brunnen_nr}"
-        body = (
-            "Assalamo-Aleikum warahmatullah-e-wabarakatehu!\n\n"
-            "Sehr geehrter Spender,\n"
-            "wir freuen uns, Ihnen mitteilen zu können, dass Ihr Projekt einen großen positiven Einfluss auf die dort ansässige Gemeinschaft im Zielland hat.\n\n"
-            "Wir möchten Ihnen unsere aufrichtige Dankbarkeit für Ihre großzügige Spende an Humanity First zum Ausdruck bringen, die dazu beigetragen hat, den Bedarf an sauberem Wasser zu decken.\n\n"
-            "Als Zeichen unserer Wertschätzung freuen wir uns, Ihnen einen umfassenden Bericht über unsere Organisation, unsere Aktivitäten und das Zielgebiet zu präsentieren, in dem Ihre Spende einen bedeutenden Einfluss auf das Leben derjenigen hatte, die am stärksten gefährdet sind.\n\n"
-            "Wir hoffen, dass diese Informationen Ihnen einen umfassenden Einblick in die Bedeutung und den Einfluss Ihres gespendeten Wasserbrunnens geben.\n\n"
-            "Nochmals Alhamdulillah, Jazzakumullah für Ihre Großzügigkeit und Ihr Mitgefühl. Sie haben das Leben vieler Menschen zum Besseren verändert.\n\n"
-            "Mit freundlichen Grüßen\n\n"
-            "Ummad Ahmad\n"
-            "Water for Life\n"
-            "Humanity First Deutschland"
-        )
-        send_email_with_attachment(receiver_email, subject, body, final_pdf)
+        if receiver_email:
+            subject = f"Ihr Brunnen {brunnen_nr}"
+            body = f"""Assalamo-Aleikum warahmatullah-e-wabarakatehu!
 
-        # PDF als Download bereitstellen
-        return send_file(final_pdf, as_attachment=True)
+Sehr geehrter Spender,
+wir freuen uns, Ihnen mitteilen zu können, dass Ihr Projekt einen großen positiven Einfluss auf die ansässige Gemeinschaft im {selected_template} hat.
 
-    # HTML-Formular anzeigen
-    return render_template("index.html", templates=templates)
+Wir möchten Ihnen unsere aufrichtige Dankbarkeit für Ihre großzügige Spende an Humanity First zum Ausdruck bringen, die dazu beigetragen hat, den Bedarf an sauberem Wasser in {selected_template} zu decken.
+
+Als Zeichen unserer Wertschätzung freuen wir uns, Ihnen einen umfassenden Bericht über unsere Organisation, unsere Aktivitäten und das Zielgebiet {selected_template} zu präsentieren, in dem Ihre Spende einen bedeutenden Einfluss auf das Leben derjenigen hatte, die am stärksten gefährdet sind.
+
+Wir hoffen, dass diese Informationen Ihnen einen umfassenden Einblick in die Bedeutung und den Einfluss Ihres gespendeten Wasserbrunnens geben.
+
+Nochmals Alhamdulillah, Jazzakumullah für Ihre Großzügigkeit und Ihr Mitgefühl. Sie haben das Leben vieler Menschen zum Besseren verändert.
+
+Mit freundlichen Grüßen
+
+Ummad Ahmad
+Water for Life
+Humanity First Deutschland
+            """
+            send_email_with_attachment(receiver_email, subject, body, final_pdf)
+            success_message = "Der Bericht wurde erfolgreich generiert und per E-Mail versandt!"
+        else:
+            success_message = "Der Bericht wurde erfolgreich generiert!"
+
+        # Rückgabe des Erfolgsstatus und Download-Links als JSON
+        if receiver_email:
+            success_message = "E-Mail wurde erfolgreich versandt! Der Bericht steht auch zum Download bereit."
+        else:
+            success_message = "Der Bericht steht nun zum Download bereit."
+
+        return {
+        "status": "success",
+        "message": success_message,
+        "download_url": f"/download/{os.path.basename(final_pdf)}"
+}
+
+    print("Anfrage-Methode:", request.method)  # Debugging
+    if request.method == "POST":
+        print("POST-Daten:", request.form)  # Debugging
+        print("Dateien:", request.files)  # Debugging
+    return render_template("index.html", templates=["Niger", "Benin", "Togo", "Cambodia", "Chad"])
+
+@app.route("/download/<filename>")
+def download(filename):
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if os.path.exists(file_path):
+        return send_file(file_path, as_attachment=True)
+    else:
+        return "Datei nicht gefunden", 404
+
 
 # Helferfunktion zur Validierung von E-Mail-Adressen
 def is_valid_email(email):

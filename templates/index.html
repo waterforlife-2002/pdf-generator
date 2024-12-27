@@ -186,9 +186,10 @@
     <div class="container">
         <h1 style="background-color: #1a4f9c; color: white; padding: 10px; border-radius: 4px; display: inline-block; text-align: center; width: 100%;">Humanity-First Berichtssoftware</h1>
 
-                <div id="confirmationMessage" class="confirmation" style="display: none;">
-                    E-Mail wurde erfolgreich versandt! Der Bericht steht auch zum Download bereit.
-                </div>
+        <div id="confirmationMessage" class="confirmation" style="display: none; text-align: center; padding: 10px; margin-top: 20px; background-color: #e0ffe0; color: #006400; border: 1px solid #006400; border-radius: 8px;">
+            E-Mail wurde erfolgreich versandt! Der Bericht steht auch zum Download bereit.
+        </div>
+        
         <a href="https://app.asana.com/" target="_blank" class="asana-button">Einloggen bei Asana</a>
 <style>
     .asana-button {
@@ -212,7 +213,7 @@
 </style>
 
         <!-- Hauptformular für Berichtserstellung -->
-        <form method="POST" enctype="multipart/form-data" onsubmit="showConfirmation(event)">
+        <form method="POST" action="/" enctype="multipart/form-data" onsubmit="showConfirmation(event)">
             <label for="template">Länder-Vorlage auswählen:</label>
             <select name="template" id="template" required>
                 {% for template in templates %}
@@ -241,7 +242,9 @@
             <input type="file" name="images" id="images" accept="image/*" multiple>
         
             <label for="receiver_email">Empfänger-E-Mail:</label>
-            <input type="email" name="receiver_email" id="receiver_email" placeholder="E-Mail-Adresse des Empfängers" required>
+            <input type="email" name="receiver_email" id="receiver_email" placeholder="E-Mail-Adresse des Empfängers">
+            <p class="note">Bei Angabe der E-Mail-Adresse wird der Bericht automatisch versandt.</p>
+            
         
             <button type="submit">Bericht generieren & versenden</button>
             
@@ -295,6 +298,43 @@
                 passwordField.type = 'password';
             }
         }
+
+        function showConfirmation(event) {
+    event.preventDefault(); // Verhindert das Standardformular-Verhalten
+    const confirmationMessage = document.getElementById('confirmationMessage');
+    const submitButton = event.target.querySelector('button[type="submit"]');
+
+    submitButton.disabled = true;
+    submitButton.innerText = 'Wird verarbeitet...';
+
+    const formData = new FormData(event.target);
+
+    fetch(event.target.action, {
+    method: 'POST',
+    body: formData
+})
+.then(response => response.json())
+.then(data => {
+    if (data.status === "success") {
+        const confirmationMessage = document.getElementById('confirmationMessage');
+        confirmationMessage.textContent = data.message; // Nachricht dynamisch setzen
+        confirmationMessage.style.display = 'block'; // Bestätigung anzeigen
+        window.location.href = data.download_url; // Datei herunterladen
+    } else {
+        alert('Fehler: ' + data.message);
+    }
+    submitButton.disabled = false;
+    submitButton.innerText = 'Bericht generieren & versenden';
+})
+.catch(error => {
+    alert('Ein Fehler ist aufgetreten: ' + error.message);
+    submitButton.disabled = false;
+    submitButton.innerText = 'Bericht generieren & versenden';
+});
+}
+
+
+
 
 
     </script>
