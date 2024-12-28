@@ -192,7 +192,9 @@ def send_email_with_attachment(receiver_email, subject, body, attachment_path):
 # Funktion zum Hochladen in Google-Drive Ordner
 def upload_to_google_drive(file_path, folder_id):
     SCOPES = ['https://www.googleapis.com/auth/drive.file']
-    creds = Credentials.from_service_account_file('service_account.json', scopes=SCOPES)
+    import json
+    service_account_info = json.loads(os.getenv("GOOGLE_SERVICE_ACCOUNT"))
+    creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
     service = build('drive', 'v3', credentials=creds)
 
     file_metadata = {
