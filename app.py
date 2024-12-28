@@ -269,7 +269,7 @@ def index():
         add_centered_images_with_scaling(text_pdf, final_pdf, uploaded_images, start_page=start_page, end_page=end_page)
 
         # Speichern des finalen PDFs im UPLOAD_FOLDER
-        final_pdf = os.path.join(app.config['UPLOAD_FOLDER'], f"{brunnen_nr}.pdf")
+        final_pdf = f"{brunnen_nr}.pdf"
         add_centered_images_with_scaling(text_pdf, final_pdf, uploaded_images, start_page=start_page, end_page=end_page)
 
         # E-Mail senden
@@ -308,7 +308,8 @@ Humanity First Deutschland
         return {
         "status": "success",
         "message": success_message,
-        "download_url": f"/download/{os.path.basename(final_pdf)}"
+        "download_url": f"/download/{final_pdf}"
+
 }
 
     print("Anfrage-Methode:", request.method)  # Debugging
