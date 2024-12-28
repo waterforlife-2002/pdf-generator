@@ -11,6 +11,21 @@ from email import encoders
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
+from dotenv import load_dotenv
+import os
+import json
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+
+# Überprüfen, ob GOOGLE_SERVICE_ACCOUNT gesetzt ist
+service_account_json = os.getenv("GOOGLE_SERVICE_ACCOUNT")
+
+if not service_account_json:
+    raise EnvironmentError("GOOGLE_SERVICE_ACCOUNT ist nicht gesetzt. Bitte Umgebungsvariable oder .env-Datei überprüfen.")
+
+# Lade die .env-Datei
+load_dotenv()
 
 # Flask App-Initialisierung
 app = Flask(__name__)
@@ -191,25 +206,53 @@ def send_email_with_attachment(receiver_email, subject, body, attachment_path):
 
 # Funktion zum Hochladen in Google-Drive Ordner
 def upload_to_google_drive(file_path, folder_id):
-    SCOPES = ['https://www.googleapis.com/auth/drive.file']
+    """
+    Lädt eine Datei in einen Google Drive-Ordner hoch.
+    
+    :param file_path: Pfad zur Datei, die hochgeladen werden soll.
+    :param folder_id: ID des Google Drive-Ordners.
+    :return: ID der hochgeladenen Datei.
+    """
+    from google.oauth2.service_account import Credentials
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaFileUpload
     import json
-    service_account_info = json.loads(os.getenv("GOOGLE_SERVICE_ACCOUNT"))
-    creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
-    service = build('drive', 'v3', credentials=creds)
 
-    file_metadata = {
-        'name': os.path.basename(file_path),
-        'parents': [folder_id]
-    }
-    media = MediaFileUpload(file_path, mimetype='application/pdf')
-    uploaded_file = service.files().create(
-        body=file_metadata,
-        media_body=media,
-        fields='id'
-    ).execute()
+    try:
+        # Service-Account-Daten aus der Umgebungsvariable laden
+        service_account_json = os.getenv("GOOGLE_SERVICE_ACCOUNT")
+        if not service_account_json:
+            raise EnvironmentError("GOOGLE_SERVICE_ACCOUNT ist nicht gesetzt. Bitte konfigurieren Sie die .env-Datei oder Umgebungsvariablen.")
 
-    print(f"Datei hochgeladen: {uploaded_file.get('id')}")
-    return uploaded_file.get('id')
+        service_account_info = json.loads(service_account_json)
+        creds = Credentials.from_service_account_info(service_account_info, scopes=['https://www.googleapis.com/auth/drive.file'])
+        service = build('drive', 'v3', credentials=creds)
+
+        # Datei-Metadaten definieren
+        file_metadata = {
+            'name': os.path.basename(file_path),
+            'parents': [folder_id]
+        }
+        media = MediaFileUpload(file_path, mimetype='application/pdf')
+
+        # Datei hochladen
+        uploaded_file = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id'
+        ).execute()
+
+        print(f"Datei erfolgreich hochgeladen: {uploaded_file.get('id')}")
+        return uploaded_file.get('id')
+
+    except json.JSONDecodeError:
+        print("Fehler beim Dekodieren der GOOGLE_SERVICE_ACCOUNT-JSON. Bitte überprüfen Sie die Umgebungsvariable.")
+    except Exception as e:
+        print(f"Fehler beim Hochladen in Google Drive: {e}")
+        raise
+
+
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
