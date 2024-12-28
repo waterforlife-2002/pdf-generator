@@ -153,6 +153,26 @@
             cursor: pointer;
             text-decoration: underline;
         }
+        .google-drive-section h2 {
+            text-align: left;
+            background-color: #1a4f9c; /* Königsblauer Hintergrund */
+            color: white; /* Weiße Schrift */
+            padding: 10px 15px; /* Innenabstand */
+            margin-left: 80px; /* Einrückung nach rechts */
+            border-radius: 4px; /* Abgerundete Ecken */
+            font-size: 23px; /* Schriftgröße */
+            width: fit-content; /* Breite passt sich dem Text an */
+            margin-top: 80px;
+        }
+        .google-drive-section iframe {
+            width: 100%; /* Volle Breite */
+            height: 500px; /* Höhe des Frames */
+            border: none; /* Kein Rahmen */
+            margin-top: -25px; /* Abstand oberhalb */
+            margin-left: 90px
+        }
+
+
         @media (max-width: 600px) {
             .container {
                 margin: 20px;
@@ -173,6 +193,7 @@
                 padding: 5px 10px;
                 font-size: 14px;
             }
+
         }@media (max-width: 600px) {
     .asana-section iframe {
         width: 100%; /* Frame passt sich der Bildschirmbreite an */
@@ -313,6 +334,15 @@
                     width="80%" height="1200" frameborder="0" scrolling="no"></iframe>
         </div>
     </div>
+
+    <!-- Google Drive Ordner anzeigen -->
+    <div class="google-drive-section" id="googleDriveSection">
+        <h2>Berichte im Google Drive-Ordner</h2>
+        <iframe src="https://drive.google.com/embeddedfolderview?id=14IGXwu5OaCHM6qL4Frwe32OYcwRl70Av#grid"
+                width="100%" height="500" frameborder="0" scrolling="yes"></iframe>
+    </div>
+    
+
 
 
     <div class="footer" style="background-color: #1a4f9c; color: white; padding: 10px; border-radius: 4px;">

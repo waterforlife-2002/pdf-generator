@@ -8,6 +8,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
 
 # Flask App-Initialisierung
 app = Flask(__name__)
@@ -186,8 +189,32 @@ def send_email_with_attachment(receiver_email, subject, body, attachment_path):
     except Exception as e:
         print(f"Fehler beim Senden der E-Mail: {e}")
 
+# Funktion zum Hochladen in Google-Drive Ordner
+def upload_to_google_drive(file_path, folder_id):
+    SCOPES = ['https://www.googleapis.com/auth/drive.file']
+    creds = Credentials.from_service_account_file('service_account.json', scopes=SCOPES)
+    service = build('drive', 'v3', credentials=creds)
+
+    file_metadata = {
+        'name': os.path.basename(file_path),
+        'parents': [folder_id]
+    }
+    media = MediaFileUpload(file_path, mimetype='application/pdf')
+    uploaded_file = service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields='id'
+    ).execute()
+
+    print(f"Datei hochgeladen: {uploaded_file.get('id')}")
+    return uploaded_file.get('id')
+
 @app.route("/", methods=["GET", "POST"])
 def index():
+
+    # Erfolgsmeldung initialisieren
+    success_message = ""
+
     # Standard-Templates
     templates = ["Niger", "Benin", "Togo", "Cambodia", "Chad"]
 
@@ -272,6 +299,22 @@ def index():
         final_pdf = os.path.join(app.config['UPLOAD_FOLDER'], f"{brunnen_nr}.pdf")
         add_centered_images_with_scaling(text_pdf, final_pdf, uploaded_images, start_page=start_page, end_page=end_page)
 
+        # ID des freigegebenen Google Drive-Ordners
+        folder_id = "14IGXwu5OaCHM6qL4Frwe32OYcwRl70Av"
+
+        # Datei in Google Drive hochladen
+        try:
+            uploaded_file_id = upload_to_google_drive(final_pdf, folder_id)
+            drive_link = f"https://drive.google.com/file/d/{uploaded_file_id}/view"
+            print(f"Bericht erfolgreich in Google Drive hochgeladen: {drive_link}")
+        except Exception as e:
+            print(f"Fehler beim Hochladen in Google Drive: {e}")
+            drive_link = None
+
+        # Rückmeldung für den Benutzer
+        if drive_link:
+            success_message += f" Sie können den Bericht auch hier ansehen: {drive_link}"
+
         # E-Mail senden
         if receiver_email:
             subject = f"Ihr Brunnen {brunnen_nr}"
@@ -303,13 +346,16 @@ Humanity First Deutschland
         if receiver_email:
             success_message = "E-Mail wurde erfolgreich versandt! Der Bericht steht auch zum Download bereit."
         else:
-            success_message = "Der Bericht steht nun zum Download bereit."
+            success_message = "Der Bericht wurde in den Google-Drive Ordner hochgeladen und steht nun zum Download bereit."
 
         return {
-        "status": "success",
-        "message": success_message,
-        "download_url": f"/download/{os.path.basename(final_pdf)}"
+            "status": "success",
+            "message": success_message,
+            "download_url": f"/download/{os.path.basename(final_pdf)}",
+            "drive_url": drive_link if drive_link else None
 }
+
+
 
     print("Anfrage-Methode:", request.method)  # Debugging
     if request.method == "POST":
@@ -335,4 +381,3 @@ def is_valid_email(email):
 if __name__ == "__main__":
     app.secret_key = os.urandom(24)  # Sicherstellen, dass die Sitzung sicher ist
     app.run(host="0.0.0.0", port=8000, debug=True)
-
