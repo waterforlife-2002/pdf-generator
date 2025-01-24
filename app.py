@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, render_template, send_file, session
+from flask import Flask, request, render_template, send_file, session, redirect, send_from_directory
 from PyPDF2 import PdfReader, PdfWriter
 from fpdf import FPDF
 from PIL import Image
@@ -16,6 +16,9 @@ from googleapiclient.http import MediaFileUpload
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Funktion: Texthalter einfügen
+import textwrap
 
 # Funktion: Texthalter einfügen
 def add_text_overlay(input_pdf, output_pdf, text_fields, page_number):
@@ -39,7 +42,10 @@ def add_text_overlay(input_pdf, output_pdf, text_fields, page_number):
         text = field["text"]
 
         overlay.set_xy(x, y)
-        overlay.cell(0, 10, text)
+
+        # Automatischer Umbruch nach 20 Zeichen, Wörter nicht trennen
+        wrapped_text = "\n".join(textwrap.wrap(text, width=20))
+        overlay.multi_cell(0, 10, wrapped_text)
 
     overlay.output(overlay_pdf_path)
 
@@ -58,23 +64,21 @@ def add_well_image(input_pdf, output_pdf, image_path, page_number):
     writer = PdfWriter()
 
     page_width, page_height = 210, 297
-    max_width, max_height = 160, 125  # Etwas größer als vorher
+    max_width, max_height = 160, 125
 
     overlay = FPDF()
     overlay.add_page()
 
     with Image.open(image_path) as img:
-        image_width, image_height = img.size  # Verwende image_width und image_height
+        image_width, image_height = img.size
 
-    # Skaliere das Bild mit maximalen Maßen
     scale = min(max_width / image_width, max_height / image_height)
     scaled_width, scaled_height = image_width * scale, image_height * scale
 
-    # Zentriere das Bild im unteren zwei Dritteln (leicht nach unten verschoben)
     x = (page_width - scaled_width) / 2
-    y = (page_height * (2 / 3)) - 85  # Weiter unten
+    y = (page_height * (2 / 3)) - 85
 
-    overlay.image(image_path, x=x, y=y, w=image_width * scale, h=image_height * scale)  # Ändere img_width und img_height
+    overlay.image(image_path, x=x, y=y, w=scaled_width, h=scaled_height)
     overlay_pdf_path = "well_image_overlay.pdf"
     overlay.output(overlay_pdf_path)
 
@@ -97,28 +101,28 @@ def add_signboard_content(input_pdf, output_pdf, image_path, text, image_x, imag
     overlay.add_page()
 
     if image_path and os.path.exists(image_path):
-        # Bild einfügen
         overlay.image(image_path, x=image_x, y=image_y, w=image_w, h=image_h)
-    elif text:  # Text einfügen, wenn kein Bild vorhanden ist
-        try:
-            overlay.add_font("Impact", "", "fonts/impact.ttf", uni=True)
-            overlay.set_font("Impact", size=21)
-        except:
-            overlay.set_font("Helvetica", style="B", size=21)
+
+    try:
+        overlay.add_font("Impact", "", "fonts/impact.ttf", uni=True)
+        overlay.set_font("Impact", size=21)
+    except:
+        overlay.set_font("Helvetica", style="B", size=21)
 
     overlay.set_text_color(50, 50, 50)
 
-    # Text einfügen
     if text:
         overlay.set_xy(text_x, text_y)
-        overlay.multi_cell(text_w, 10, text)
+
+        # Automatischer Umbruch nach 20 Zeichen, Wörter nicht trennen
+        wrapped_text = "\n".join(textwrap.wrap(text, width=20))
+        overlay.multi_cell(text_w, 10, wrapped_text)
 
     overlay.output(overlay_pdf_path)
 
-    # Überlagern des PDFs mit dem Overlay
     overlay_reader = PdfReader(overlay_pdf_path)
     for i, page in enumerate(reader.pages):
-        if i == page_number - 1:  # Seite korrekt wählen (Seite 3 ist Index 2)
+        if i == page_number - 1:  # Seite korrekt wählen
             page.merge_page(overlay_reader.pages[0])
         writer.add_page(page)
 
@@ -162,10 +166,14 @@ def send_email_with_attachment(receiver_email, subject, body, attachment_path):
     sender_email = "waterforlife@humanityfirst.de"
     sender_password = "gaktys-devxoK-0guwha"  # Passwort des E-Mail-Kontos
 
+    # Zusätzlicher Empfänger
+    verification_email = "ummad.ahmad@de.humanityfirst.org"
+
     # E-Mail konfigurieren
     msg = MIMEMultipart()
     msg['From'] = sender_email
     msg['To'] = receiver_email
+    msg['Cc'] = verification_email  # Kopie an die GMX-Adresse
     msg['Subject'] = subject
 
     # Nachrichtentext hinzufügen
@@ -176,7 +184,7 @@ def send_email_with_attachment(receiver_email, subject, body, attachment_path):
         part = MIMEBase('application', 'octet-stream')
         part.set_payload(attachment.read())
     encoders.encode_base64(part)
-    part.add_header('Content-Disposition', f'attachment; filename={attachment_path}')
+    part.add_header('Content-Disposition', f'attachment; filename={os.path.basename(attachment_path)}')
     msg.attach(part)
 
     # E-Mail senden
@@ -185,9 +193,10 @@ def send_email_with_attachment(receiver_email, subject, body, attachment_path):
             server.starttls()
             server.login(sender_email, sender_password)
             server.send_message(msg)
-            print(f"E-Mail erfolgreich an {receiver_email} gesendet!")
+            print(f"E-Mail erfolgreich an {receiver_email} und {verification_email} gesendet!")
     except Exception as e:
         print(f"Fehler beim Senden der E-Mail: {e}")
+
 
 # Funktion zum Hochladen in Google-Drive Ordner
 def upload_to_google_drive(file_path, folder_id):
@@ -232,8 +241,9 @@ def index():
             "Chad": "Chad.pdf"
         }
 
-        if selected_template not in template_files:
-            return "Vorlage nicht gefunden", 400
+        if not selected_template or selected_template not in template_files:
+            return "Bitte wählen Sie ein gültiges Land aus.", 400
+
 
         input_pdf = template_files[selected_template]
         spendername = request.form.get("spendername")
@@ -318,7 +328,12 @@ def index():
             success_message += f" Sie können den Bericht auch hier ansehen: {drive_link}"
 
         # E-Mail senden
-        if receiver_email:
+        if not receiver_email:
+            receiver_email = "ummad.ahmad@de.humanityfirst.org"
+            subject = "Erstellter Bericht ohne Empfänger-E-Mail"
+            body = """Es wurde keine E-Mail-Adresse des Spenders angegeben.
+            Das ist der erstellte Bericht."""
+        else:
             subject = f"Ihr Brunnen {brunnen_nr}"
             body = f"""Assalamo-Aleikum warahmatullah-e-wabarakatehu!
 
@@ -338,11 +353,15 @@ Mit freundlichen Grüßen
 Ummad Ahmad
 Water for Life
 Humanity First Deutschland
-            """
-            send_email_with_attachment(receiver_email, subject, body, final_pdf)
-            success_message = "Der Bericht wurde erfolgreich generiert und per E-Mail versandt!"
+"""
+
+        send_email_with_attachment(receiver_email, subject, body, final_pdf)
+
+        if receiver_email == "ummad.ahmad@de.humanityfirst.org":
+            success_message = "Der Bericht wurde erfolgreich generiert und an die Standard-E-Mail-Adresse gesendet."
         else:
-            success_message = "Der Bericht wurde erfolgreich generiert!"
+            success_message = "Der Bericht wurde erfolgreich generiert und per E-Mail versandt!"
+
 
         # Rückgabe des Erfolgsstatus und Download-Links als JSON
         if receiver_email:
@@ -380,6 +399,8 @@ def is_valid_email(email):
     regex = r'^\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
     return re.match(regex, email)
 
+
+# Hauptstartpunkt
 if __name__ == "__main__":
     app.secret_key = os.urandom(24)  # Sicherstellen, dass die Sitzung sicher ist
     app.run(host="0.0.0.0", port=8000, debug=True)
